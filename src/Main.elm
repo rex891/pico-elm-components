@@ -40,7 +40,7 @@ type alias Model =
 
 init : De.Value -> ( Model, Cmd Msg )
 init flags =
-    ( { mesg = "PICO"
+    ( { mesg = "elm pico"
       , selectedSize = Small
       , sizeDropdown = Small
       , lastName = ""
@@ -68,7 +68,7 @@ type Msg
     | ChooseFile
     | GotFile File.File
     | SetColor String
-    | SetCheck Size Bool
+    | SetCheck (List Size)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -84,17 +84,8 @@ update msg model =
             in
             ( model, Cmd.none )
 
-        SetCheck size checked ->
-            ( { model
-                | selectedSizes =
-                    if checked then
-                        size :: model.selectedSizes
-
-                    else
-                        remove size model.selectedSizes
-              }
-            , Cmd.none
-            )
+        SetCheck sizs ->
+            ( { model | selectedSizes = sizs }, Cmd.none )
 
         SetColor color ->
             ( { model | color = color }, Cmd.none )
@@ -154,28 +145,43 @@ view model =
                 ]
                 [ node "hgroup"
                     []
-                    [ h1 [] [ text "wassup" ]
-                    , h2 [] [ text "dog" ]
+                    [ h3 [] [ text "Elm Pico Elements" ]
+                    , h3 [] [ text "a collection of ready made elements" ]
                     ]
-                , label [] [ text "First name" ]
-                , input
-                    [ placeholder "First name"
-                    , required True
-                    , value "Joe Mama"
-
-                    -- , attribute "aria-invalid" "true"
+                , div [ class "grid" ]
+                    [ label []
+                        [ text "First name"
+                        , input
+                            [ placeholder "First name"
+                            , required True
+                            , value "Joe Mama"
+                            ]
+                            []
+                        ]
+                    , label []
+                        [ text "Last name"
+                        , input
+                            [ placeholder "Last name"
+                            , required True
+                            , onInput SetLastName
+                            , attribute "aria-invalid" "true"
+                            ]
+                            []
+                        ]
                     ]
-                    []
-                , label [] [ text "Last name" ]
-                , input [ placeholder "Last name", required True, onInput SetLastName ] []
-                , label [] [ text "Email address" ]
-                , input [ type_ "email", placeholder "Email address", required True ] []
-                , small [] [ text "We'll never share your email with anyone else." ]
+                , label []
+                    [ text "Email address"
+                    , input [ type_ "email", placeholder "Email address", required True ] []
+                    , small [] [ text "We'll never share your email with anyone else." ]
+                    ]
                 , button [ class "outline contrast" ] [ text "Submit" ]
                 , div []
                     [ radioGroup "Size" SetSize model.selectedSize sizes
                     , dropdown "Size" SetSizeStr model.sizeDropdown sizes
-                    , checkboxDropdown SetCheck model.selectedSizes sizes
+                    , label []
+                        [ text "Sizes"
+                        , checkboxDropdown SetCheck model.selectedSizes sizes
+                        ]
                     , label []
                         [ input [ type_ "checkbox", onCheck SetAgree ] []
                         , text "I agree to the Terms and Conditions"
@@ -201,11 +207,12 @@ view model =
                         , css [ m_4 ]
                         ]
                         [ text "Choose File" ]
-                    , label [] [ text ("Range slider " ++ String.fromFloat model.rangeVal) ]
-                    , range SetRangeVal 0 100 1 model.rangeVal
-                    , fieldset []
-                        [ legend [] [ text "wassup" ]
-                        , label []
+                    , label []
+                        [ text ("Range slider " ++ String.fromFloat model.rangeVal)
+                        , range SetRangeVal 0 100 1 model.rangeVal
+                        ]
+                    , div [ class "grid" ]
+                        [ label []
                             [ text "Date"
                             , input [ type_ "date", onInput PrintStr ] []
                             ]
@@ -216,32 +223,6 @@ view model =
                         , label []
                             [ text "Color"
                             , input [ type_ "color", value model.color, onInput SetColor ] []
-                            ]
-                        ]
-                    , div []
-                        [ {- With checkboxes -}
-                          details [ attribute "role" "list" ]
-                            [ summary [ attribute "aria-haspopup" "listbox" ] [ text "Dropdown" ]
-                            , ul [ attribute "role" "listbox" ]
-                                [ li []
-                                    [ label []
-                                        [ input [ type_ "checkbox" ] []
-                                        , text "Banana"
-                                        ]
-                                    ]
-                                , li []
-                                    [ label []
-                                        [ input [ type_ "checkbox" ] []
-                                        , text "Watermelon"
-                                        ]
-                                    ]
-                                , li []
-                                    [ label []
-                                        [ input [ type_ "checkbox" ] []
-                                        , text "Apple"
-                                        ]
-                                    ]
-                                ]
                             ]
                         ]
                     ]
@@ -312,24 +293,24 @@ radioGroup title toMsg modelVar options =
         )
 
 
-checkboxDropdown : (a -> Bool -> msg) -> List a -> List ( a, String ) -> Html msg
-checkboxDropdown toMsg modelVar options =
+checkboxDropdown : (List opt -> msg) -> List opt -> List ( opt, String ) -> Html msg
+checkboxDropdown toMsg currentOpts allOptionsWithStrings =
     details [ attribute "role" "list" ]
         [ summary
             [ attribute "aria-haspopup" "listbox"
             , attribute "role" "button"
-            , class "secondary"
+            , class "contrast outline"
             ]
             [ text
-                (if List.isEmpty modelVar then
+                (if List.isEmpty currentOpts then
                     "Select..."
 
                  else
                     String.join ", "
-                        (options
+                        (allOptionsWithStrings
                             |> List.filterMap
                                 (\( opt, optStr ) ->
-                                    if List.member opt modelVar then
+                                    if List.member opt currentOpts then
                                         Just optStr
 
                                     else
@@ -345,15 +326,24 @@ checkboxDropdown toMsg modelVar options =
                         [ label []
                             [ input
                                 [ type_ "checkbox"
-                                , onCheck (toMsg opt)
-                                , checked (List.member opt modelVar)
+                                , onCheck
+                                    (\checked ->
+                                        toMsg
+                                            (if checked then
+                                                opt :: currentOpts
+
+                                             else
+                                                remove opt currentOpts
+                                            )
+                                    )
+                                , checked (List.member opt currentOpts)
                                 ]
                                 []
                             , text optStr
                             ]
                         ]
                 )
-                options
+                allOptionsWithStrings
             )
         ]
 
