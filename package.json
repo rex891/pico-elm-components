@@ -1,0 +1,19 @@
+{
+  "name": "elm-vite",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build --base ./",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^3.1.0"
+  },
+  "dependencies": {
+    "@picocss/pico": "^1.5.7",
+    "elm": "^0.19.1-5",
+    "vite-plugin-elm": "^2.7.2"
+  }
+}
